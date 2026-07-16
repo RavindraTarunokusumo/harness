@@ -40,6 +40,33 @@ Rules:
 ### Workflow Rules
 
 1. Every TODO sub-item should land as its own commit.
+
+### Autopilot Mode
+
+Autopilot Mode is an explicit grant from the user that authorizes the senior orchestrator to execute the full 7-step workflow end-to-end (Steps 3–7: planning through reflection) for a defined feature or cohesive set of changes without pausing for per-step user approval.
+
+**Grant rules:**
+- Must be explicitly stated by the user in the current session for the specific scope.
+- Applies to exactly one independent workflow cycle.
+- Does not carry over between sessions or to unrelated features.
+- Does not waive the requirement for an accepted spec.
+
+**Non-waived invariants (still mandatory under Autopilot):**
+- Accepted spec under `docs/specs/`.
+- TODO.md logging of every spec-derived task/sub-item **before** any edits.
+- Every implementation sub-task delegated to an ephemeral Grok junior via the non-interactive handoff protocol.
+- Independent senior review of every diff + full project validation (lint, typecheck, tests, GitNexus impact/detect_changes) before every commit.
+- Specific staging only (`git add <specific files>`).
+- Per-sub-item commits with git notes.
+- Grok handoffs for all review gates (`/simplify`, security-review, bundled PR review).
+- No force-push, hard-reset, amend, or merge.
+- Post-PR archive of TODO items to `docs/iterations/archive/` with commit/merge tags and spec reference.
+- Workflow-only reflection in `docs/insights.md` (tools, commands, recurring issues, skills — never feature details).
+- Explicit user permission before deleting worktree/branch after reflection.
+
+If discovery during implementation contradicts the spec or lightweight plan, immediately suspend Autopilot, document the issue, and report back.
+
+Milestone progress updates are still sent concisely even under Autopilot.
 2. Any extension or modification to the task should be logged in the TODO.
 3. Use specific staging, never `git add -A`.
 4. Never force-push, reset `--hard`, merge or amend unless explicitly asked.
