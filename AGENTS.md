@@ -40,6 +40,33 @@ Rules:
 ### Workflow Rules
 
 1. Every TODO sub-item should land as its own commit.
+
+### Autopilot Mode
+
+Autopilot Mode is an explicit grant from the user that authorizes the senior orchestrator to execute the full 7-step workflow end-to-end (Steps 3–7: planning through reflection) for a defined feature or cohesive set of changes without pausing for per-step user approval.
+
+**Grant rules:**
+- Must be explicitly stated by the user in the current session for the specific scope.
+- Applies to exactly one independent workflow cycle.
+- Does not carry over between sessions or to unrelated features.
+- Does not waive the requirement for an accepted spec.
+
+**Non-waived invariants (still mandatory under Autopilot):**
+- Accepted spec under `docs/specs/`.
+- TODO.md logging of every spec-derived task/sub-item **before** any edits.
+- Every implementation sub-task delegated to an ephemeral Grok junior via the non-interactive handoff protocol.
+- Independent senior review of every diff + full project validation (lint, typecheck, tests, GitNexus impact/detect_changes) before every commit.
+- Specific staging only (`git add <specific files>`).
+- Per-sub-item commits with git notes.
+- Grok handoffs for all review gates (`/simplify`, security-review, bundled PR review).
+- No force-push, hard-reset, amend, or merge.
+- Post-PR archive of TODO items to `docs/iterations/archive/` with commit/merge tags and spec reference.
+- Workflow-only reflection in `docs/insights.md` (tools, commands, recurring issues, skills — never feature details).
+- Explicit user permission before deleting worktree/branch after reflection.
+
+If discovery during implementation contradicts the spec or lightweight plan, immediately suspend Autopilot, document the issue, and report back.
+
+Milestone progress updates are still sent concisely even under Autopilot.
 2. Any extension or modification to the task should be logged in the TODO.
 3. Use specific staging, never `git add -A`.
 4. Never force-push, reset `--hard`, merge or amend unless explicitly asked.
@@ -70,12 +97,18 @@ grok -p "<self-contained prompt>" -m grok-4.5 --effort <LEVEL> --yolo --output-f
 - *Implementation:* review the diff, normalize output, then validate per [Workflow Rule 10](#workflow-rules) (full suite + typecheck + lint) and commit with specific staging + a git note.
 - *Review:* process findings via the receiving-code-review reception protocol (see the [Submit PR](#submit-pr) section).
 
-**Clean up (always)** — delete the ephemeral session directory under `~/.grok/sessions/<encoded-cwd>/<sessionId>/`:
+**Clean up (always)** — delete the ephemeral session directory under `~/.grok/sessions/<encoded-cwd>/<sessionId>/`.
+
+PowerShell:
 ```powershell
 Get-ChildItem -Path "$env:USERPROFILE\.grok\sessions" -Recurse -Directory -Filter $sessionId |
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 ```
-Bash equivalent: `find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune -exec rm -rf {} +`
+
+Linux/macOS (Bash):
+```bash
+find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune -exec rm -rf {} +
+```
 
 **Parallelism:** where the task graph allows (disjoint files, no shared dependency on unlanded work), run multiple handoffs in isolated git worktrees; otherwise sequential.
 
@@ -83,7 +116,9 @@ Bash equivalent: `find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune 
 
 1. Fill out the **[Template](.github/pull_request_template.md)** and submit the PR (capture the PR number/URL, e.g. via `gh pr create --json number,url`).
 
-2. (Optional) If the changes affect security (or explicitly stated), delegate a non-interactive security review to a Grok subagent (ephemeral session). Always cite justification. Capture the session ID and clean it up afterwards so the review chat session is deleted. PowerShell example:
+2. (Optional) If the changes affect security (or explicitly stated), delegate a non-interactive security review to a Grok subagent (ephemeral session). Always cite justification. Capture the session ID and clean it up afterwards so the review chat session is deleted.
+
+   PowerShell example:
    ```powershell
    $prNum = gh pr view --json number -q .number
    $prompt = "Use the /security-review skill on PR #$prNum. Report only HIGH-confidence newly introduced vulnerabilities from the diff."
@@ -98,7 +133,21 @@ Bash equivalent: `find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune 
        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
    ```
 
-3. Generate the main professional code review by delegating the Grok bundled reviewer per the [Grok Build Implementation/Review Handoff](#grok-build-implementationreview-handoff). Capture the PR number first (`$prNum = gh pr view --json number -q .number`) and use the review prompt:
+   Linux/macOS (Bash) equivalent:
+   ```bash
+   prNum=$(gh pr view --json number -q .number)
+   prompt="Use the /security-review skill on PR #$prNum. Report only HIGH-confidence newly introduced vulnerabilities from the diff."
+   json=$(grok -p "$prompt" --yolo --output-format json)
+   reviewText=$(printf '%s' "$json" | jq -r '.text')
+   sessionId=$(printf '%s' "$json" | jq -r '.sessionId')
+
+   # Main agent processes "$reviewText" here (e.g. incorporate findings, address via receiving-code-review logic)
+
+   # Delete the ephemeral Grok subagent chat session created for this review
+   find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune -exec rm -rf {} +
+   ```
+
+3. Generate the main professional code review by delegating the Grok bundled reviewer per the [Grok Build Implementation/Review Handoff](#grok-build-implementationreview-handoff). Capture the PR number first — PowerShell: `$prNum = gh pr view --json number -q .number`; Linux/macOS (Bash): `prNum=$(gh pr view --json number -q .number)` — and use the review prompt:
    ```
    Use /bundled:review --pr #$prNum. The skill should post a PENDING GitHub review. After it completes, provide a very brief summary of what was done.
    ```
