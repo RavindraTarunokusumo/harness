@@ -31,7 +31,7 @@ Rules:
 
 1. (Preamble) Ensure you're in a dedicated local branch/worktree under `.worktree/<session-name>` and activate the project environment (see [docs/commands.md](docs/commands.md)). Read the `docs/insights.md` file and the [Workflow Rules](#workflow-rules).
 2. (GitNexus) Read the [GitNexus](#gitnexus--code-intelligence) section at the start of every session.
-3. (Spec Writing + Lightweight Plan) For feature implementation, write a detailed specification document following a spec-driven development process (requirements, data models, interfaces, workflows, edge cases, success criteria, and constraints). Do not write implementation plans or code until the spec is complete and accepted. Read the docs (see [Project Map](#project-map)) and use GitNexus as your primary means to understand the codebase. For debugging or minor patching, skip this step. Once the spec is accepted, produce a **lightweight implementation plan** that serves as the Grok implementer's contract — file structure, task decomposition, per-task **Interfaces** (Consumes/Produces signatures), build order, and risks. Do **not** inline verbatim per-step code or exact shell commands; the implementer regenerates those from the contract. The plan's value is the cross-task contract (who calls what, in what order), not transcribed code — that contract is what catches the class of bug a narrowly-scoped implementer cannot see (e.g. a changed signature breaking another caller). This preserves the spec→plan→implementation independent-verification chain at a fraction of the planning cost.
+3. (Spec Writing + Lightweight Plan) For feature implementation, write a detailed specification document following a spec-driven development process (requirements, data models, interfaces, workflows, edge cases, success criteria, and constraints). Do not write implementation plans or code until the spec is complete and accepted. Summarize the key details of the report to the user (See [Communication Rules](#communicating-with-the-user)). Read the docs (see [Project Map](#project-map)) and GitNexus to understand the codebase. For debugging or minor patching, skip this step. Once the spec is accepted, produce a **lightweight implementation plan** that serves as the Grok implementer's contract — file structure, task decomposition, per-task **Interfaces** (Consumes/Produces signatures), build order, and risks. Do **not** inline verbatim per-step code or exact shell commands; the implementer regenerates those from the contract. The plan's value is the cross-task contract (who calls what, in what order), not transcribed code — that contract is what catches the class of bug a narrowly-scoped implementer cannot see (e.g. a changed signature breaking another caller). This preserves the spec→plan→implementation independent-verification chain at a fraction of the planning cost.
 4. (Implementing) Log tasks and sub-items in `TODO.md` first, then implement each task by delegating to a **Grok subagent as the implementer** via the non-interactive CLI (`grok -p "<task instructions>" --yolo --output-format json`), one ephemeral session per task (per the [Grok Build Implementation/Review Handoff](#grok-build-implementationreview-handoff)). Capture the `sessionId` from the JSON result, review and validate the produced changes, run `npm run lint` (and typecheck/tests) before each commit, attach a git note afterwards using the [template](.github/git_notes_template.md), then delete the ephemeral `~/.grok/sessions/.../<sessionId>` directory for that implementation subagent. Commit any files the subagent wrote immediately (per Workflow Rule 9). Cross each sub-item and item once done. Where the task graph allows — independent tasks with disjoint files and no shared dependency on unlanded work — run multiple implementer subagents in parallel using isolated git worktrees; otherwise implement sequentially. After each delegated task, the main agent independently validates with the **full** test suite plus typecheck and lint before committing — never trust the implementer's scoped self-report (it grades only against its narrow task scope and will report green while a cross-cutting change, e.g. a modified signature breaking another caller, stays broken). Also review the diff and normalize implementer output (e.g. trailing newlines) during review. If Grok fails, fall back to the `/subagent-driven-development` skill.
 5. (Submit PR) Finally, follow the instructions in the [Submit PR](#submit-pr) workflow — using non-interactive `grok -p` commands where possible to trigger reviews — and notify the user once every step has been completed. If Grok fails, spawn native subagents as a fallback.
 6. (Post-PR) Update documentation files once the PR has been merged and archive completed TODO items from `TODO.md` into `docs/iterations/archive/`; ensure each subitem in the TODO are tagged with the commit hash and each session are tagged with the merge ID - `TODO.md` should only contain **active or future** work only. These Post-PR doc/archive commits are pushed **directly to `main`** (no PR — the feature PR is already merged); fast-forward only, never force.
@@ -56,11 +56,11 @@ The canonical contract for delegating any unit of work — implementation tasks 
 
 **Invoke** (headless, single-turn, no TUI):
 ```
-grok -p "<self-contained prompt>" -m grok-composer-2.5-fast --effort <LEVEL> --yolo --output-format json
+grok -p "<self-contained prompt>" -m grok-4.5 --effort <LEVEL> --yolo --output-format json
 ```
 - `-p` / `--single`: headless single-turn mode; creates an ephemeral chat session.
-- `-m` / `--model`: model name; always use Composer 2.5 Fast for any task.
-- `--effort`: set thinking level; choose between `high` or `xhigh` depending on task difficulty.
+- `-m` / `--model`: model name; always use Grok 4.5 for any task.
+- `--effort`: set thinking level; choose between `medium`/`high`/`xhigh` depending on task difficulty.
 - `--yolo` (or `--always-approve`): auto-approves tools so the delegation runs unattended.
 - `--output-format json`: returns structured output including `text` (final summary) and `sessionId` (required for cleanup).
 
@@ -149,6 +149,15 @@ The agent must not:
 - silently expand task scope
 - rely on AI memory as the source of truth
 - skip validation unless explicitly blocked and reported
+
+## Communication with the User
+
+**Keep your report, updates or questions about the project simple and in plain terms.**
+- Only surface tactical or strategic decisions. 
+- Always go for the recommended approach for strictly technical implementation choices.
+- Handle operational decisions and summarize the rationale in one sentence.
+- Speak to the user as you might to a stakeholder as a project manager.
+- Cover business logic, deltas, risks and opportunities. 
 
 ---
 
