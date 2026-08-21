@@ -162,6 +162,8 @@ find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune -exec rm -rf {} +
 
 **Note for mixed Claude/Grok environments:** In Claude Code sessions you may use `/code-review:code-review` (the official plugin) as a fallback, but prefer the Grok bundled reviewer when available for higher-quality structural feedback and proper PENDING review workflow.
 
+4. Finally, use the `/simplify` skill to refactor the changes in this PR.
+
 ### Reflection
 
 After every session completion, you reflect on how the workflow pertaining to the workflow and agent harness - the commands you executed (and which failed consistently), the tools you used, skills invoked, MCP accessed, etc. **Do not include anything feature-specific**. For example, when the Codebase Graph output is too verbose or if certain powershell commands keeps failing. This is not about the features you implemented, but about *how* you implemented them. Write this down in [Insights](docs/insights.md) and then suggest workflow updates to the user in chat.
