@@ -93,7 +93,7 @@ for repo in "${REPOS[@]}"; do
     cp "${ROOT}/${file}" "${dest}/${file}"
   done
 
-  git -C "${dest}" add -- "${FILES[@]}"
+  git -C "${dest}" add -f -- "${FILES[@]}"
   if git -C "${dest}" diff --cached --quiet; then
     echo "${repo} already matches harness"
   else
