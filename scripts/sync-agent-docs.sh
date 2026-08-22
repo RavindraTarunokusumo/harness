@@ -42,6 +42,29 @@ trap 'rm -rf "${work}"' EXIT
 
 failed=0
 
+ensure_pr() {
+  local repo="$1"
+  local existing
+  existing="$(gh pr list --repo "${repo}" --head "${BRANCH}" --json number --jq '.[0].number // empty')"
+  if [[ -n "${existing}" ]]; then
+    echo "${repo}: PR #${existing} already open"
+    return 0
+  fi
+  if ! gh pr create --repo "${repo}" \
+    --base main \
+    --head "${BRANCH}" \
+    --title "chore: sync agent docs from harness" \
+    --body "$(cat <<EOF
+Copies \`AGENTS.md\` and \`CLAUDE.md\` from [harness](https://github.com/RavindraTarunokusumo/harness) so agent workflow docs stay in sync.
+
+This PR is opened automatically when those files change on \`harness\` \`main\`.
+EOF
+)"; then
+    echo "failed to open PR in ${repo}" >&2
+    return 1
+  fi
+}
+
 for repo in "${REPOS[@]}"; do
   echo "::group::${repo}"
   dest="${work}/${repo##*/}"
@@ -52,43 +75,33 @@ for repo in "${REPOS[@]}"; do
     continue
   fi
 
-  git -C "${dest}" checkout -B "${BRANCH}"
-
-  changed=()
-  for file in "${FILES[@]}"; do
-    cp "${ROOT}/${file}" "${dest}/${file}"
-    changed+=("${file}")
-  done
-
-  git -C "${dest}" add -- "${changed[@]}"
-  if git -C "${dest}" diff --cached --quiet; then
-    echo "${repo} already matches harness"
-    echo "::endgroup::"
-    continue
+  if git -C "${dest}" fetch --depth 1 origin "${BRANCH}"; then
+    git -C "${dest}" checkout -B "${BRANCH}" "origin/${BRANCH}"
+  else
+    git -C "${dest}" checkout -B "${BRANCH}"
   fi
 
-  git -C "${dest}" config user.name "github-actions[bot]"
-  git -C "${dest}" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  git -C "${dest}" commit -m "${COMMIT_MSG}"
-  git -C "${dest}" push -u origin "${BRANCH}" --force
+  for file in "${FILES[@]}"; do
+    cp "${ROOT}/${file}" "${dest}/${file}"
+  done
 
-  existing="$(gh pr list --repo "${repo}" --head "${BRANCH}" --json number --jq '.[0].number // empty')"
-  if [[ -n "${existing}" ]]; then
-    echo "${repo}: updated existing PR #${existing}"
+  git -C "${dest}" add -- "${FILES[@]}"
+  if git -C "${dest}" diff --cached --quiet; then
+    echo "${repo} already matches harness"
   else
-    if ! gh pr create --repo "${repo}" \
-      --base main \
-      --head "${BRANCH}" \
-      --title "chore: sync agent docs from harness" \
-      --body "$(cat <<EOF
-Copies \`AGENTS.md\` and \`CLAUDE.md\` from [harness](https://github.com/RavindraTarunokusumo/harness) so agent workflow docs stay in sync.
-
-This PR is opened automatically when those files change on \`harness\` \`main\`.
-EOF
-)"; then
-      echo "failed to open PR in ${repo}" >&2
+    git -C "${dest}" config user.name "github-actions[bot]"
+    git -C "${dest}" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    git -C "${dest}" commit -m "${COMMIT_MSG}"
+    if ! git -C "${dest}" push -u origin "${BRANCH}"; then
+      echo "failed to push ${BRANCH} to ${repo}" >&2
       failed=1
+      echo "::endgroup::"
+      continue
     fi
+  fi
+
+  if ! ensure_pr "${repo}"; then
+    failed=1
   fi
   echo "::endgroup::"
 done
