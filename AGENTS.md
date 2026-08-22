@@ -12,6 +12,7 @@ Any change made to `AGENTS.md` should also be applied to `CLAUDE.md`.
 - Database / Persistence: [docs/database.md](docs/database.md)
 - Patterns: [docs/patterns.md](docs/patterns.md)
 - Testing: [docs/testing.md](docs/testing.md)
+- Security: [docs/security.md](docs/security.md)
 - Commands: [docs/commands.md](docs/commands.md)
 - Agent Harness: [docs/agent-harness.md](docs/agent-harness.md)
 - Full Index: [docs/index.md](docs/index.md)
@@ -165,6 +166,20 @@ find "$HOME/.grok/sessions" -type d -name "$sessionId" -prune -exec rm -rf {} +
 **Note for mixed Claude/Grok environments:** In Claude Code sessions you may use `/code-review:code-review` (the official plugin) as a fallback, but prefer the Grok bundled reviewer when available for higher-quality structural feedback and proper PENDING review workflow.
 
 4. Finally, use the `/simplify-code` skill to refactor the changes in this PR.
+
+### Security Review
+
+Diff-scoped only. Use the `/security-review` skill. Do not scan the entire repository.
+
+Mandatory paths, priority surfaces, and what this review does not replace: [docs/security.md](docs/security.md).
+
+**Skip** when the diff is only `docs/`, `TODO.md`, `docs/changelog.md`, `docs/insights.md`, or `docs/iterations/`.
+
+**Procedure** (after the PR exists, so findings can land on the PR):
+1. Classify the diff against the mandatory paths in [docs/security.md](docs/security.md). If none match, write one line in the PR body: `Security review: skipped (no sensitive paths).`
+2. If any match, run the Grok `/security-review` handoff (`--effort high`). Prompt must include: use only local file reads, `gh`, and shell — do not call any MCP tools.
+3. Process findings with the receiving-code-review protocol. HIGH blocks merge. MEDIUM requires an explicit user decision. Do not "fix" speculative items.
+4. Capture `sessionId` and delete `~/.grok/sessions/.../<sessionId>/`.
 
 ### Reflection
 

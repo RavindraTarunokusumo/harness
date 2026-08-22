@@ -1,0 +1,35 @@
+name: Sync agent docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - AGENTS.md
+      - CLAUDE.md
+      - docs/agent-docs-targets.json
+      - scripts/sync-agent-docs.sh
+      - .github/workflows/sync-agent-docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check token
+        env:
+          HARNESS_SYNC_TOKEN: ${{ secrets.HARNESS_SYNC_TOKEN }}
+        run: |
+          if [ -z "${HARNESS_SYNC_TOKEN}" ]; then
+            echo "Add repo secret HARNESS_SYNC_TOKEN (fine-grained PAT with Contents + Pull requests write on listed consumer repos)." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Open or update consumer PRs
+        env:
+          GH_TOKEN: ${{ secrets.HARNESS_SYNC_TOKEN }}
+        run: bash scripts/sync-agent-docs.sh

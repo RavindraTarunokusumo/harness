@@ -9,6 +9,7 @@ Use this file as the second layer after `AGENTS.md` and `CLAUDE.md`. It points t
 - [database.md](database.md): schema, persistence model, migration rules
 - [patterns.md](patterns.md): durable coding and state-management rules
 - [testing.md](testing.md): test execution, fixtures, validation workflow
+- [security.md](security.md): PR security-review classification (mandatory paths and skip rules)
 - [commands.md](commands.md): common local commands
 - [changelog.md](changelog.md): notable behavior and architecture changes
 - [insights.md](insights.md): session lessons and reusable workflow observations
