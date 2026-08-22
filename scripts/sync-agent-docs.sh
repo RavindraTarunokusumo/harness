@@ -76,9 +76,17 @@ for repo in "${REPOS[@]}"; do
   fi
 
   if git -C "${dest}" fetch --depth 1 origin "${BRANCH}"; then
-    git -C "${dest}" checkout -B "${BRANCH}" "origin/${BRANCH}"
-  else
-    git -C "${dest}" checkout -B "${BRANCH}"
+    if ! git -C "${dest}" checkout -B "${BRANCH}" FETCH_HEAD; then
+      echo "failed to check out ${BRANCH} in ${repo}" >&2
+      failed=1
+      echo "::endgroup::"
+      continue
+    fi
+  elif ! git -C "${dest}" checkout -B "${BRANCH}"; then
+    echo "failed to create ${BRANCH} in ${repo}" >&2
+    failed=1
+    echo "::endgroup::"
+    continue
   fi
 
   for file in "${FILES[@]}"; do
