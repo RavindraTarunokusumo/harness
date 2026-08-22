@@ -20,6 +20,7 @@ if [[ -z "${GH_TOKEN:-${GITHUB_TOKEN:-}}" ]]; then
 fi
 
 export GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN}}"
+gh auth setup-git
 
 mapfile -t FILES < <(jq -r '.files[]' "${TARGETS}")
 mapfile -t REPOS < <(jq -r '.repos[]' "${TARGETS}")

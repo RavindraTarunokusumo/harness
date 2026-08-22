@@ -32,4 +32,6 @@ jobs:
       - name: Open or update consumer PRs
         env:
           GH_TOKEN: ${{ secrets.HARNESS_SYNC_TOKEN }}
-        run: bash scripts/sync-agent-docs.sh
+        run: |
+          gh auth setup-git
+          bash scripts/sync-agent-docs.sh
