@@ -76,14 +76,19 @@ for repo in "${REPOS[@]}"; do
   if [[ -n "${existing}" ]]; then
     echo "${repo}: updated existing PR #${existing}"
   else
-    gh pr create --repo "${repo}" \
+    if ! gh pr create --repo "${repo}" \
+      --base main \
+      --head "${BRANCH}" \
       --title "chore: sync agent docs from harness" \
       --body "$(cat <<EOF
 Copies \`AGENTS.md\` and \`CLAUDE.md\` from [harness](https://github.com/RavindraTarunokusumo/harness) so agent workflow docs stay in sync.
 
 This PR is opened automatically when those files change on \`harness\` \`main\`.
 EOF
-)"
+)"; then
+      echo "failed to open PR in ${repo}" >&2
+      failed=1
+    fi
   fi
   echo "::endgroup::"
 done
